@@ -24,9 +24,14 @@ mpl.rc('image', cmap='gray')
 
 ''' Variable Declaration '''
 mymatfile = './JL_tensorflow.mat' # Exported MAT-file, contains OPD/R/G/B-Maps
-myimagefile = './data/HUAWEI/IMG_20190208_094404.jpg';
-myimagefile = './data/HUAWEI/IMG_20190208_094240.jpg'
-myroisize = 512 # a subregion of the image will be cropped around the center in order to reduce the computational time
+myimagefile = './data/HUAWEI/IMG_20190208_094404.jpg'; # working great
+myimagefile = './data/HUAWEI/IMG_20190208_094240.jpg'; # working great
+myimagefile = './data/HUAWEI/2019-03-22 17.29.00.jpg';# not working too great
+myimagefile = './data/HUAWEI/2019-03-22 17.34.42.jpg';# not working too great
+myimagefile = './data/HUAWEI/2019-03-22 17.35.42.jpg';#not working too great
+myimagefile = './data/HUAWEI/2019-03-22 17.35.50.jpg';#very good result!!!
+
+myroisize = 1024 # a subregion of the image will be cropped around the center in order to reduce the computational time
 use_mask = False # do you want to use a mas for restricting the recovery?
 
 # Fitting-related
@@ -35,11 +40,11 @@ opdmax = 1650 # maximum optical path-difference in [nm]
 use_matlab = False # USe values stored in matlab .MAT?
 
 # Optmization-related 
-lambda_neg = 100 # Negative/Positive penalty
-lambda_tv = 10 # TV-parameter
-epsC = 1e0 # TV-parameter
+lambda_tv = 100 # TV-parameter
+epsC = 1e-2 # TV-parameter
+#lambda_neg = 100 # Negative/Positive penalty
 lr = 100 # learning-rate
-Niter = 150 # number of iteration
+Niter = 200 # number of iteration
 is_debug = False # Show results while iterating? 
 
 
@@ -207,8 +212,6 @@ TF_loss = TF_opt_TV.minimize(TF_myError)
 
 #%%
 ''' start optimization part here '''
-lambda_tv = 100 # TV-parameter
-epsC = 1e-2 # TV-parameter
 sess = tf.Session()
 sess.run(tf.global_variables_initializer())
 
@@ -216,7 +219,7 @@ myopd_old = sess.run(TF_opd)
 plt.imshow(myopd_old), plt.colorbar(), plt.show()
 
 
-for i in range(100):
+for i in range(Niter):
     # Alternating? - Better not! 
     #my_loss_l2,_ = sess.run([TF_mySqrError, TF_loss_l2], feed_dict={TF_lr:lr})
     #my_loss_tv,_ = sess.run([TF_myTVError,TF_loss_TV], feed_dict={TF_lr:lr})
@@ -228,18 +231,18 @@ for i in range(100):
     if(not np.mod(i,10)):
         print("My Loss L2: @iter: "+str(i)+" is: "+str(my_loss_l2)+", My Loss TV: "+str(my_loss_tv))
     
-    if(is_debug):
+    if(not np.mod(i, 100)):#is_debug):
         myopd_new = sess.run(TF_opd_masked)
         plt.imshow(myopd_new), plt.colorbar(), plt.show()
 
 #%%
 myopd_new = sess.run(TF_opd_masked)
 
-plt.subplot(131)
-plt.imshow(myopd_old), plt.colorbar(), plt.title('Minimal Norm solution')
-plt.subplot(132)
-plt.imshow(myopd_new), plt.colorbar(), plt.title('Gradient Descent + TV')
-plt.subplot(133)
+plt.subplot(121)
+plt.imshow(myopd_old), plt.colorbar(fraction=0.046, pad=0.04), plt.title('Minimal Norm solution')
+plt.subplot(122)
+plt.imshow(myopd_new), plt.colorbar(fraction=0.046, pad=0.04), plt.title('Gradient Descent + TV')
+plt.figure()
 plt.title('Crosssection through the center')
 plt.plot(myopd_old[:,myopd_old.shape[1]//2])
-plt.plot(myopd_new[:,myopd_old.shape[1]//2]), plt.legend('Old', 'New'), plt.show()
+plt.plot(myopd_new[:,myopd_old.shape[1]//2]), plt.show()
