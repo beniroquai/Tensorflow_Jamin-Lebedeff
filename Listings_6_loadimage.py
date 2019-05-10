@@ -28,8 +28,10 @@ myimagefile = './data/HUAWEI/IMG_20190208_094404.jpg'; # working great
 myimagefile = './data/HUAWEI/IMG_20190208_094240.jpg'; # working great
 myimagefile = './data/HUAWEI/2019-03-22 17.29.00.jpg';# not working too great
 myimagefile = './data/HUAWEI/2019-03-22 17.34.42.jpg';# not working too great
-myimagefile = './data/HUAWEI/2019-03-22 17.35.42.jpg';#not working too great
-myimagefile = './data/HUAWEI/2019-03-22 17.35.50.jpg';#very good result!!!
+myimagefile = './data/HUAWEI/2019-03-22 17.35.42.jpg';# not working too great
+myimagefile = './data/HUAWEI/2019-03-22 17.35.50.jpg';# very good result!!!
+#myimagefile = './data/HUAWEI/IMG_20190208_094404.jpg'
+#myimagefile = './data/HUAWEI/IMG_20190208_094404.jpg'; # working great
 
 myroisize = 1024 # a subregion of the image will be cropped around the center in order to reduce the computational time
 use_mask = False # do you want to use a mas for restricting the recovery?
@@ -40,8 +42,8 @@ opdmax = 1650 # maximum optical path-difference in [nm]
 use_matlab = False # USe values stored in matlab .MAT?
 
 # Optmization-related 
-lambda_tv = 100 # TV-parameter
-epsC = 1e-2 # TV-parameter
+lambda_tv = 50 # TV-parameter
+epsC = 1e2 # TV-parameter
 #lambda_neg = 100 # Negative/Positive penalty
 lr = 100 # learning-rate
 Niter = 200 # number of iteration
@@ -196,6 +198,7 @@ TF_myTVError = TF_lambda_TV * tf_jammin.Reg_TV(TF_opd_masked, epsC=TF_epsC)
 
 
 # we don't want to have negative values 
+lambda_neg = 1000
 TF_neg_loss = lambda_neg * tf_jammin.Reg_NegSqr(TF_opd_masked) # clip values if out of range (no suppot)
 TF_pos_loss = lambda_neg * tf_jammin.Reg_PosSqr(TF_opd_masked-np.max(OPD_map)) # clip values if out of range (no suppot)
 
@@ -246,3 +249,6 @@ plt.figure()
 plt.title('Crosssection through the center')
 plt.plot(myopd_old[:,myopd_old.shape[1]//2])
 plt.plot(myopd_new[:,myopd_old.shape[1]//2]), plt.show()
+
+plt.imsave('myopd_old.tif', myopd_old)
+plt.imsave('myopd_new.tif', myopd_new)

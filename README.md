@@ -1,2 +1,2 @@
-# Jammin-Lebedeff Inversion Code Using Tensorflow
+# Jamin-Lebedeff Inversion Code Using Tensorflow
  
