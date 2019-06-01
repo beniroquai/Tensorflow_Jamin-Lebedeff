@@ -23,6 +23,8 @@ mpl.rc('image', cmap='gray')
 # min -> OPD ||(R(OPD)-R_meas)^2 +  (G(OPD)-G_meas)^2 +  (B(OPD)-B_meas)^2 +|| + TV(OPD)
 
 ''' Variable Declaration '''
+
+mydatafolder = './'
 mymatfile = './JL_tensorflow.mat' # Exported MAT-file, contains OPD/R/G/B-Maps
 myimagefile = './data/HUAWEI/IMG_20190208_094404.jpg'; # working great
 myimagefile = './data/HUAWEI/IMG_20190208_094240.jpg'; # working great
@@ -32,8 +34,19 @@ myimagefile = './data/HUAWEI/2019-03-22 17.35.42.jpg';# not working too great
 myimagefile = './data/HUAWEI/2019-03-22 17.35.50.jpg';# very good result!!!
 #myimagefile = './data/HUAWEI/IMG_20190208_094404.jpg'
 #myimagefile = './data/HUAWEI/IMG_20190208_094404.jpg'; # working great
+myimagefile = './data/HUAWEI/IMG_20190510_134223.jpg'
+myimagefile = './data/HUAWEI/IMG_20190510_134039.jpg' # very good!
+myimagefile = './data/HUAWEI/IMG_20190510_133714.TIF' # not good! 
+myimagefile = './data/HUAWEI/IMG_20190510_134223.jpg'
+myimagefile = './data/HUAWEI/IMG_20190520_135218.jpg' # together with /JL_tensorflow_19_5_20.mat'
 
-myroisize = 1024 # a subregion of the image will be cropped around the center in order to reduce the computational time
+
+if(1):
+    mydatafolder = 'C:/Users/diederichbenedict/Dropbox/Dokumente/Promotion/PROJECTS/Jamin.Lebedeff/PYTHON/TF_JL_TVMin/data/HUAWEI/2019_05_21/'
+    myimagefile = 'IMG_20190520_135218.jpg'
+    
+'''Start Code here'''
+myroisize = 750 # a subregion of the image will be cropped around the center in order to reduce the computational time
 use_mask = False # do you want to use a mas for restricting the recovery?
 
 # Fitting-related
@@ -43,16 +56,17 @@ use_matlab = False # USe values stored in matlab .MAT?
 
 # Optmization-related 
 lambda_tv = 50 # TV-parameter
-epsC = 1e2 # TV-parameter
+epsC = 1e-2 # TV-parameter
 #lambda_neg = 100 # Negative/Positive penalty
 lr = 100 # learning-rate
 Niter = 200 # number of iteration
 is_debug = False # Show results while iterating? 
 
-
+Ndisplay_text = 10
+Ndisplay = 20
 '''Load image and crop it'''
 
-myimage = plt.imread(myimagefile)
+myimage = plt.imread(mydatafolder + myimagefile)
 myimage_size = myimage.shape
 myimage = myimage[myimage_size[0]//2-myroisize//2:myimage_size[0]//2+myroisize//2,
                     myimage_size[1]//2-myroisize//2:myimage_size[1]//2+myroisize//2, :]
@@ -60,7 +74,7 @@ myimage = np.float32(myimage)
 
 ''' Preload MATLAB Data '''
 # load system data; new MATLAB v7.3 Format! 
-mat_matlab_data = h5py.File(mymatfile, 'r')
+mat_matlab_data = h5py.File(mydatafolder+mymatfile, 'r')
 OPD_mask = np.squeeze(np.array(mat_matlab_data['mask_mat']))
 myopd_res_matlab = np.squeeze(np.array(mat_matlab_data['OPDMap_mat']))
 B_map = np.squeeze(np.array(mat_matlab_data['B_mat']))
@@ -231,15 +245,16 @@ for i in range(Niter):
     my_loss_tv,my_loss_l2,_ = sess.run([TF_myTVError,TF_mySqrError,TF_loss], feed_dict={TF_lr:lr, TF_lambda_TV:lambda_tv, TF_epsC:epsC}) 
     
     #my_loss_tv,my_loss_l2,_ = sess.run([TF_myTVError,TF_mySqrError,TF_loss], feed_dict={TF_lr:lr}) 
-    if(not np.mod(i,10)):
+    if(not np.mod(i,Ndisplay_text)):
         print("My Loss L2: @iter: "+str(i)+" is: "+str(my_loss_l2)+", My Loss TV: "+str(my_loss_tv))
     
-    if(not np.mod(i, 100)):#is_debug):
+    if(not np.mod(i, Ndisplay)):#is_debug):
         myopd_new = sess.run(TF_opd_masked)
         plt.imshow(myopd_new), plt.colorbar(), plt.show()
 
 #%%
 myopd_new = sess.run(TF_opd_masked)
+
 
 plt.subplot(121)
 plt.imshow(myopd_old), plt.colorbar(fraction=0.046, pad=0.04), plt.title('Minimal Norm solution')
@@ -252,3 +267,4 @@ plt.plot(myopd_new[:,myopd_old.shape[1]//2]), plt.show()
 
 plt.imsave('myopd_old.tif', myopd_old)
 plt.imsave('myopd_new.tif', myopd_new)
+plt.imsave('myrgb_raw.tif', myimage)
