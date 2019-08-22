@@ -6,9 +6,10 @@ import h5py
 import tf_jammin as tf_jammin
 from mpl_toolkits.mplot3d.axes3d import Axes3D
 import NanoImagingPack as nip
+nip.config.__DEFAULTS__['IMG_VIEWER']='NIP_VIEW'
 #%load_ext autoreload
 #%autoreload 2
-mpl.rc('figure',  figsize=(10, 5))
+mpl.rc('figure',  figsize=(8, 4))
 mpl.rc('image', cmap='gray')
 
 
@@ -42,9 +43,13 @@ myimagefile = './data/HUAWEI/IMG_20190510_134223.jpg'
 myimagefile = './data/HUAWEI/IMG_20190520_135218.jpg' # together with /JL_tensorflow_19_5_20.mat'
 
 
-if(1):
+if(0):
     mydatafolder = 'C:/Users/diederichbenedict/Dropbox/Dokumente/Promotion/PROJECTS/Jamin.Lebedeff/PYTHON/TF_JL_TVMin/data/HUAWEI/2019_05_21/'
     myimagefile = 'IMG_20190520_135218.jpg'
+elif(1):
+    mydatafolder = '/Users/bene/Dropbox/Dokumente/Promotion/PROJECTS/Jamin.Lebedeff/PYTHON/TF_JL_TVMin/data/HUAWEI/2019_05_21-Pont/'
+    myimagefile = 'IMG_20190520_144336.jpg'
+    mymatfile = 'JL_tensorflow.mat'
     
 '''Start Code here'''
 myroisize = 750 # a subregion of the image will be cropped around the center in order to reduce the computational time
@@ -56,7 +61,7 @@ opdmax = 1650 # maximum optical path-difference in [nm]
 use_matlab = False # USe values stored in matlab .MAT?
 
 # Optmization-related 
-lambda_tv = 50 # TV-parameter
+lambda_tv = 10 # TV-parameter
 epsC = 1e-2 # TV-parameter
 #lambda_neg = 100 # Negative/Positive penalty
 lr = 100 # learning-rate
@@ -74,9 +79,10 @@ myimage = myimage[myimage_size[0]//2-myroisize//2:myimage_size[0]//2+myroisize//
 myimage = np.float32(myimage)
 
 # highpass-filter image - remove dust ? 
-myfilter = nip.rr(myimage.shape[0:2])>(.01*np.mean(myimage.shape[0:2]))
-myimage = np.real(nip.ift(nip.ft(nip.image(myimage))*np.expand_dims(myfilter,-1)))
-nip.view5d.v5(myimage)
+if(0):
+    myfilter = nip.rr(mysize=myimage.shape[0:2])>(.01*np.mean(myimage.shape[0:2]))
+    myimage = np.real(nip.ift(nip.ft(nip.image(myimage))*np.expand_dims(myfilter,-1)))
+#nip.view5d.v5(myimage)
 
 ''' Preload MATLAB Data '''
 #%% load system data; new MATLAB v7.3 Format! 
@@ -160,6 +166,8 @@ RGB_result_matlab[:,:,1] = tf_jammin.polyeval(mulfac*myopd_res_matlab, np.squeez
 RGB_result_matlab[:,:,2] = tf_jammin.polyeval(mulfac*myopd_res_matlab, np.squeeze(B_fit_func.coeffs))
 
 # show the simulated result according to fitted RGB Data
+plt.figure
+plt.title('RGB_result_matlab')
 plt.imshow(RGB_result_matlab/np.max(RGB_result_matlab)), plt.colorbar(), plt.show()
 
 
@@ -172,9 +180,9 @@ plt.imshow(RGB_result_matlab/np.max(RGB_result_matlab)), plt.colorbar(), plt.sho
 # ||Ax-f|| +  TV(sqrt((R(OPD)-R'(OPD))**2-(G(OPD)-G'(OPD))**2-(B(OPD)-B'(OPD))**2))
 
 # seperate calibration arrays into RGB
-R_exp = np.squeeze(I_exp[0,:,:])
-G_exp = np.squeeze(I_exp[1,:,:])
-B_exp = np.squeeze(I_exp[2,:,:])
+R_exp = np.squeeze(np.float32(I_exp[0,:,:]))
+G_exp = np.squeeze(np.float32(I_exp[1,:,:]))
+B_exp = np.squeeze(np.float32(  I_exp[2,:,:]))
 mysize = I_exp.shape
 
 # Convert Image to Tensorflow objects 
@@ -239,7 +247,8 @@ sess = tf.Session()
 sess.run(tf.global_variables_initializer())
 
 myopd_old = sess.run(TF_opd)
-plt.imshow(myopd_old), plt.colorbar(), plt.show()
+plt.title('Minimum Norm Solution'), plt.imshow(myopd_old), plt.colorbar(), plt.show()
+
 
 
 for i in range(Niter):

@@ -5,7 +5,7 @@ import matplotlib as mpl
 import h5py 
 import tf_jammin as tf_jammin
 import skvideo.io
-
+import skvideo.datasets
 import NanoImagingPack as nip
 from mpl_toolkits.mplot3d.axes3d import Axes3D
 
@@ -30,14 +30,22 @@ nip.config.__DEFAULTS__['IMG_VIEWER']='NIP_VIEW'
 # min -> OPD ||(R(OPD)-R_meas)^2 +  (G(OPD)-G_meas)^2 +  (B(OPD)-B_meas)^2 +|| + TV(OPD)
 
 ''' Variable Declaration '''
-mymatfile = './JL_tensorflow.mat' # Exported MAT-file, contains OPD/R/G/B-Maps
-mymatfile = './JL_tensorflow_19_5_20.mat'
-myvideopath = './data/HUAWEI/'
-myvideofile = 'VID_20190520_135445.mp4'
-
-
+if(0):
+    mymatfile = './JL_tensorflow.mat' # Exported MAT-file, contains OPD/R/G/B-Maps
+    mydatafolder = './data/HUAWEI/'
+    myvideofile = 'VID_20190520_135445.mp4'
+elif(0):
+    mydatafolder = './data/HUAWEI/2019_05_21-Pont/'
+    myimagefile = 'IMG_20190520_144336.jpg'
+    mymatfile = 'JL_tensorflow.mat'
+    myvideofile = 'VID_20190520_115124.mp4'
+elif(1):
+    mydatafolder = './data/HUAWEI/2019_05_21-Pont_Video/'
+    myimagefile = 'IMG_20190520_144336.jpg'
+    mymatfile = 'JL_tensorflow.mat'
+    myvideofile = 'MOV_2019_05_21_14_13_44.mp4'  
 #%%
-myroisize = 750 # a subregion of the image will be cropped around the center in order to reduce the computational time
+myroisize = 512 # a subregion of the image will be cropped around the center in order to reduce the computational time
 use_mask = False # do you want to use a mas for restricting the recovery?
 
 # Fitting-related
@@ -47,19 +55,19 @@ use_matlab = False # USe values stored in matlab .MAT?
 
 # Optmization-related 
 lambda_tv = 50 # TV-parameter
-epsC = 1e-2 # TV-parameter
+epsC = 1e-4 # TV-parameter
 #lambda_neg = 100 # Negative/Positive penalty
-lr = 100 # learning-rate
-Niter = 100 # number of iteration
+lr = 50 # learning-rate
+Niter = 200 # number of iteration
 is_debug = False # Show results while iterating? 
 
 Ndisplay_text = 10
-Ndisplay = 100
-
+Ndisplay = 1000
+Nframes = 250
 
 #%%
 ''' Read the videofile '''
-myvideo = myvideopath+myvideofile
+myvideo = mydatafolder+myvideofile
 videogen = skvideo.io.vreader(myvideo)
 
 myimage = []
@@ -70,7 +78,7 @@ for frame in videogen:
     myimage.append(np.uint8(rgb_frame))
     iframe += 1
     print(iframe)
-    if iframe> 10000:
+    if iframe> Nframes:
         break
 
 # extract subroi    
@@ -80,7 +88,7 @@ myallimages_sub = nip.extract(myallimages, (myroisize, myroisize, 3, myallimages
 
 ''' Preload MATLAB Data '''
 # load system data; new MATLAB v7.3 Format! 
-mat_matlab_data = h5py.File(mymatfile, 'r')
+mat_matlab_data = h5py.File(mydatafolder+mymatfile, 'r')
 #OPD_mask = np.squeeze(np.array(mat_matlab_data['mask_mat']))
 myopd_res_matlab = np.squeeze(np.array(mat_matlab_data['OPDMap_mat']))
 B_map = np.squeeze(np.array(mat_matlab_data['B_mat']))
@@ -196,17 +204,17 @@ for iframes in range(myallimages_sub.shape[-1]):
     
     # seperate calibration arrays into RGB
     I_exp = np.transpose(myimage, (2,0,1)) # Assuming CXY 
-    R_exp = np.squeeze(I_exp[0,:,:])
-    G_exp = np.squeeze(I_exp[1,:,:])
-    B_exp = np.squeeze(I_exp[2,:,:])
-
+    R_exp = np.squeeze(I_exp[0,:,:])+28
+    G_exp = np.squeeze(I_exp[1,:,:])+35
+    B_exp = np.squeeze(I_exp[2,:,:])+28
+#+uint8(cat(3,28, 35, 28)
     # estimate minimal norm solution 
     myinitopd = tf_jammin.findOPD(I_exp,R_map,G_map,B_map,mulfac)
     #plt.imshow(myinitopd), plt.colorbar(), plt.show()
     OPD_mask = np.ones(myinitopd.shape) # we don't want a mask here
     
     # This has to be assigned for each frame inidividually
-    sess.run(tf.assign(TF_opd, myinitopd))
+    sess.run(tf.assign(TF_opd, myinitopd)) # TODO: It is not working - again!
 
     for i in range(Niter):
         # Alternating? - Better not! 
@@ -225,32 +233,42 @@ for iframes in range(myallimages_sub.shape[-1]):
             myopd_new = sess.run(TF_opd_masked)
             plt.imshow(myopd_new), plt.colorbar(), plt.show()
     
-
+    #%
+    myopd_old = myinitopd#sess.run(TF_opd)
     myopd_new = sess.run(TF_opd_masked)
-    myopd_old = myinitopd
     #myopd_new = myopd_new - np.min(myopd_new)
-    
-    
-    plt.subplot(121)
+
+    fig = plt.figure()
+    plt.subplot(132)
     plt.imshow(myopd_old), plt.colorbar(fraction=0.046, pad=0.04), plt.title('Minimal Norm solution')
-    plt.subplot(122)
+    plt.subplot(133)
     plt.imshow(myopd_new), plt.colorbar(fraction=0.046, pad=0.04), plt.title('Gradient Descent + TV')
-    plt.figure()
-    plt.title('Crosssection through the center')
-    plt.plot(myopd_old[:,myopd_old.shape[1]//2])
-    plt.plot(myopd_new[:,myopd_old.shape[1]//2]), plt.show()
+    plt.subplot(131)
+    plt.imshow(np.uint8(myimage)), plt.colorbar(fraction=0.046, pad=0.04), plt.title('RAW-Frame')
+    fig.tight_layout() # Or equivalently,  "plt.tight_layout()"
+    plt.savefig('./PLOTS/saveplot_'+str(iframes))
+    plt.show()
     
-    plt.imsave('myopd_old.tif', myopd_old)
-    plt.imsave('myopd_new.tif', myopd_new)
-    plt.imsave('myrgb_raw.tif', myimage)
+    if(0):
+        # Only to display the difference in the plot
+        plt.figure()
+        plt.title('Crosssection through the center')
+        plt.plot(myopd_old[:,myopd_old.shape[1]//2])
+        plt.plot(myopd_new[:,myopd_old.shape[1]//2]), plt.show()
+        
     
+    
+        plt.imsave('myopd_old.tif', myopd_old)
+        plt.imsave('myopd_new.tif', myopd_new)
+        plt.imsave('myrgb_raw.tif', myimage)
+        
     # save images for later 
     allframes_new.append(myopd_old)
     allframes_old.append(myopd_new)
     allframes_raw.append(myimage)
 
-plt.imshow(myimage)
 
-tif.imsave('tmp_new.tif', np.float32(np.array(allframes_new)))
-tif.imsave('tmp_old.tif', np.float32(np.array(allframes_old)))
-# tif.imsave('tmp_raw.tif', np.float32(np.array(allframes_raw)))
+# write videos to disk   
+tf_jammin.writeVideo('tmp_raw.mp4', np.array(allframes_raw))
+tf_jammin.writeVideo('tmp_new.mp4', np.array(allframes_new))
+tf_jammin.writeVideo('tmp_old.mp4', np.array(allframes_old))

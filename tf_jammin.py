@@ -192,3 +192,19 @@ def _make_slices_begin_size(input_, slices):
                          tf.scatter_nd(dim_idx, sizes, [inp_rank]),
                          inp_shape)
     return begin_full, size_full
+
+# in case we want to write a video to disk
+def writeVideo(filename,data,norm=True):
+    if norm:
+        data = (255*data/np.max(data)).astype(np.uint8)
+        print('We are normalizing the data!')
+        
+    writer = skvideo.io.FFmpegWriter(filename)
+    for i in range(data.shape[0]):
+        if len(data.shape)==3:
+            #monochromatic case 
+            writer.writeFrame(data[i, :, :])
+        else:
+            # RGB case
+            writer.writeFrame(data[i, :, :, :])
+    writer.close()
