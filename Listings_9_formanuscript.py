@@ -109,43 +109,8 @@ R_fit = tf_jammin.polyeval((OPD_map), np.squeeze(R_fit_func.coeffs))
 G_fit = tf_jammin.polyeval((OPD_map), np.squeeze(G_fit_func.coeffs))
 B_fit = tf_jammin.polyeval((OPD_map), np.squeeze(B_fit_func.coeffs))
 
-#%% fit of R-curve
-#plt.subplot(131)
-
-font = {'family': 'serif',
-        'color':  'black',
-        'weight': 'normal',
-        'size': 16,
-        }
 
 
-plt.title('R')
-plt.plot(OPD_map, R_map, 'x', color='r', label='R')
-plt.plot(OPD_map, R_fit, '-', color='m', label='R´')
-
-# fit of G-curve
-#plt.subplot(132)
-plt.title('G')
-plt.plot(OPD_map, G_map, 'x', color='b', label='G')
-plt.plot(OPD_map, G_fit, '-', color='c', label='G´')
-
-# fit of G-curve
-#plt.subplot(133)
-#plt.title('RGB')
-plt.plot(OPD_map, B_map, 'x', color='g', label='B')
-plt.plot(OPD_map, B_fit, '-', color='y', label='B´')
-plt.legend(loc='upper left')
-
-plt.xlabel('OPD [nm]', fontdict=font)
-plt.ylabel('I [AU]', fontdict=font)          
-plt.show()
-
-#%% RGB-OPD parametric curve
-fig8 = plt.figure()
-ax8 = fig8.gca(projection = '3d')
-ax8.plot(R_map, G_map, B_map)
-ax8.plot(R_fit, G_fit, B_fit)
-plt.show()
 
 # Test the result with given minimal norm solution and fitted data
 RGB_result_matlab = np.zeros((myopd_res_matlab.shape[0],myopd_res_matlab.shape[1],3))
@@ -258,7 +223,65 @@ for i in range(Niter):
 #%%
 myopd_new = sess.run(TF_opd_masked)
 
-#%%
+#%%Create Figures 
+
+#%% Fig 0
+#%% fit of R-curve
+#plt.subplot(131)
+
+font = {'family': 'serif',
+        'color':  'black',
+        'weight': 'normal',
+        'size': 16,
+        }
+
+
+plt.title('R')
+plt.plot(OPD_map, R_map, 'x', color='r', label='R')
+plt.plot(OPD_map, R_fit, '-', color='m', label='R´')
+
+# fit of G-curve
+#plt.subplot(132)
+plt.title('G')
+plt.plot(OPD_map, G_map, 'x', color='b', label='G')
+plt.plot(OPD_map, G_fit, '-', color='c', label='G´')
+
+# fit of G-curve
+#plt.subplot(133)
+#plt.title('RGB')
+plt.plot(OPD_map, B_map, 'x', color='g', label='B')
+plt.plot(OPD_map, B_fit, '-', color='y', label='B´')
+plt.legend(loc='lower left')
+
+plt.xlabel('OPD [nm]', fontdict=font)
+plt.ylabel('I [AU]', fontdict=font)          
+plt.savefig('./data/FIGURES/Fig0.png', bbox_inches='tight', pad_inches=0)
+plt.show()
+
+
+#%% Fig 0.1 
+# RGB-OPD parametric curve
+fig = plt.figure()
+ax = fig.gca(projection = '3d')
+ax.plot(R_map, G_map, B_map, 'g')
+#ax.plot_wireframe(R_fit, G_fit, B_fit, rstride=5, cstride=5)
+ax.view_init(30, 55)
+ax.set_aspect('equal')
+ax.set_xlim(0, 160)
+ax.set_ylim(0, 160)
+ax.set_zlim(0, 160)
+plt.xticks(np.arange(0, max(R_map)+1,50))
+plt.yticks(np.arange(0, max(R_map)+1,50))
+plt.zticks(np.arange(0, max(R_map)+1,50))
+
+plt.savefig('./data/FIGURES/Fig0_1.png', bbox_inches='tight', pad_inches=0)
+plt.show()
+
+#ax.plot(R_fit, G_fit, B_fit)
+#plt.plt.show()
+
+
+#%% Fig 1
 mycropsize = 200
 mycrop_pos = (350,200)
 vmin = 000
@@ -298,8 +321,7 @@ ax1.add_patch(rect3)
 plt.savefig('./data/FIGURES/Fig1_5.png', bbox_inches='tight', pad_inches=0)
 plt.show()
 
-plt.imshow(np.transpose(nip.extract(I_exp/255, (mycropsize,mycropsize,3), mycrop_pos),(1,2,0))), plt.xticks([]), plt.yticks([])
-plt.colorbar(fraction=0.046, pad=0.04)
+plt.imshow(np.transpose(nip.extract(I_exp/255, (3,mycropsize,mycropsize), mycrop_pos),(1,2,0))), plt.xticks([]), plt.yticks([])
 plt.savefig('./data/FIGURES/Fig1_6.png', bbox_inches='tight', pad_inches=0)
 plt.show()
 
