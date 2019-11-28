@@ -35,17 +35,17 @@ if any(GaussSigma)>0
     myErr=gaussf(myErr,GaussSigma*0);
 end
 
-CMask = repmat(CMask(:,:,0),[1 1 size(R,3)]);
+
 [minv,minp]=min(myErr, [],3);
 
 
 %scatter3(squeeze(double(R)), squeeze(double(G)), squeeze(double(B)), 19, squeeze(double(OPDaxis)))
 %%
 % Trying to implment some kind of TV-regularisation
-OPDaxis=dip_image(OPDaxis);
+OPDaxis = dip_image(OPDaxis);
 OPDMap=minp*0.0;
 OPDMap(:)= (double(minp(:)));
-OPDMap = squeeze(OPDMap);
+OPDMap = squeeze(OPDMap)/size(OPDaxis);
 diffx = (OPDMap-circshift(OPDMap, [0 1]))^2;
 diffy = (OPDMap-circshift(OPDMap, [1 0]))^2;
-cat(3, diffx, diffy)
+cat(3, diffx, diffy);

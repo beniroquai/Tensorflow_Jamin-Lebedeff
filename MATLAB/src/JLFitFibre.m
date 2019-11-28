@@ -1,5 +1,22 @@
-function [fiber_shape, theta, mask] = JLFitFibre(input)
+function [fiber_shape, theta, mask, mybackgroundval] = JLFitFibre(input, is_onesided)
+%
+% [fiber_shape, theta, mask, mybackgroundval] = JLFitFibre()
+%
+% IN:
+% input - 
+% is_onesided - 
+%
+% OUT:
+% fiber_shape - 
+% theta - 
+% mask - 
+% mybackgroundval - 
 
+
+
+if(nargin<2)
+    is_onesided = false
+end
 mysize=size(squeeze(input(:,:,1)));
 %% Generate a fake fiber object
 
@@ -14,9 +31,20 @@ fprintf('Order: Upper-Left Corner, Upper-Right Corner, Lower-Right Corner, Lower
 FiberPosition = dipgetcoords(fh,4);
 fprintf('Thank you :-)')
 
-[fiber_shape, theta] = getFakeFiber(FiberPosition, mysize);
+% select the Backgroundvalue 
+fprintf('Please select a sample-free background region (i.e. black/dark)')
+BackgroundPosition = dipgetcoords(fh,1);
+
+
+mybackgroundval = mean(extract(input, [50,50,3], BackgroundPosition),[],[1,2]);
+[fiber_shape, fiber_shape_onesided, theta] = getFakeFiber(FiberPosition, mysize);
 
 %% select ROI
 mask = drawpolygon(newim(mysize),FiberPosition,1,'closed');
 mask = dip_image(mask,'bin');
 mask = ~bpropagation(mask&0,~mask,0,1,1);
+
+if is_onesided
+    mask = fiber_shape_onesided>0;
+    fiber_shape = fiber_shape_onesided;
+end

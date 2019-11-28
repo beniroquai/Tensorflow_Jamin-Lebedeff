@@ -6,7 +6,24 @@ The manuscript can be found in the [Biorxiv](https://www.biorxiv.org/content/10.
 
 ## Step-by-Step 
 
-### Take Measurement 
+### JL measurements procedure: 
+
+
+- Set the light source. We used cooLED pE-4000, preset White2, intensity 5. 
+- Align the optical components to achieve proper Köhler illumination and the best interference contrast. 
+- The axes of the polarizer and the analyzer has to be perpedicular to each other, with polarizer on 0° and analyzer on 90°.
+- Focus the sample with aperture and field diaphragm open.
+- Close the field diaphragm and align the condenser to see a single focused image of the field aperture in the centre onf the FOV. 
+- Open the aperture to fill the FOV. 
+- Change the tilt of the condenser’s beamsplitter, the interference colour change. 
+- Change the tilt to turn the background black. 
+- Use smartphone – OpenCamera for image acquisiton, with the following settings
+- Resolution 3968x2976, focus infinity, ISO 50, white balance and scene mode auto (sadly), exposure 1/40s (or other, just use the same for all measurements), save raw image in .dng format. 
+- Video: Resolution 1920x1080, focus infinity, ISO 50, exposure 1/40s. 
+
+The measurements were done according to the following procedure. First, the light sourced was fixed to a reproducible white light equivalent (cooLED pE-4000, preset White2 – wavelenghts 385, 470, 550 and 660 nm, intensity 5). Starting with the polarizer and the analyzer axes at 0° and 90° respectively, which is important in order to see a contrast interference image, the sample is brought roughly into focus. Next, the condenser is aligned to produce a single focused image of the closed field aperture in the sample plane. That way the proper mutual position of the calcite plate of the condenser and the one of the objective is achieved. Then, with the field aperture opened to fill the field of view, adjust the focus and the tilt of the beamsplitter to see a colorful image of the sample in a black background. For image acqusition we used the OpenCamera app on Huawei P9 smartphone with the following settings: focus - infinity, ISO 50, exposure 1/40s (or other, but always using the same for all measurements). 
+
+
 
 ### MATLAB 
 

@@ -1,4 +1,4 @@
-function [fiber_shape, alpha_avg]= getFakeFiber(FiberPosition, mysize)
+function [fiber_shape, fiber_shape_onesided, alpha_avg]= getFakeFiber(FiberPosition, mysize)
 %% get angle of the fiber laying in the sample
 % in dip-coordinates the first is X, wheras in Matlab it's y-coordinate
 alpha_left = atan((FiberPosition(1,2)-FiberPosition(4,2))/(FiberPosition(1,1)-FiberPosition(4,1)));
@@ -33,3 +33,13 @@ center_fiber_xy = round(center_fiber-mysize/2);
 xy_grid = -cos(alpha_avg)*(yy(mysize)-center_fiber_xy(2))+sin(alpha_avg)*(xx(mysize)-center_fiber_xy(1));
 %xy_grid = circshift((xy_grid), round(center_fiber-size(I_subtractR)/2))
 fiber_shape = real(sqrt((dist_left_right/2).^2-(xy_grid).^2));
+if(0)
+    % better to have a linear fiber-model?
+    mymask = fiber_shape<0;
+    fiber_shape = -abs((xy_grid))*mymask;
+    fiber_shape = fiber_shape-min(fiber_shape);
+    fiber_shape = fiber_shape/max(fiber_shape);
+    fiber_shape((1-mymask)>0) = 0;
+end
+fiber_shape_onesided = fiber_shape*(xy_grid<0);
+
