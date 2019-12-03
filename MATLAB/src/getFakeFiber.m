@@ -1,4 +1,4 @@
-function [fiber_shape, fiber_shape_onesided, alpha_avg]= getFakeFiber(FiberPosition, mysize)
+function [fiber_shape, fiber_shape_onesided, alpha_avg]= getFakeFiber(FiberPosition, mysize, is_onesided)
 %% get angle of the fiber laying in the sample
 % in dip-coordinates the first is X, wheras in Matlab it's y-coordinate
 alpha_left = atan((FiberPosition(1,2)-FiberPosition(4,2))/(FiberPosition(1,1)-FiberPosition(4,1)));
@@ -41,5 +41,13 @@ if(0)
     fiber_shape = fiber_shape/max(fiber_shape);
     fiber_shape((1-mymask)>0) = 0;
 end
-fiber_shape_onesided = fiber_shape*(xy_grid<0);
+
+if (is_onesided>0)
+    fiber_shape_onesided = fiber_shape*(xy_grid<0);
+else
+    fiber_shape_onesided = fiber_shape*(xy_grid>0);
+end
+
+
+
 

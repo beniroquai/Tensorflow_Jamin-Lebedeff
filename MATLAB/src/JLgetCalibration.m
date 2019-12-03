@@ -51,6 +51,6 @@ cat(4,mytemp{:})
 R = cat(2, R{:});
 G = cat(2, G{:});
 B = cat(2, B{:});
-OPDaxis = real(cat(2, OPDaxis_temp{:}));
+OPDaxis = dip_image(real(cat(2, OPDaxis_temp{:})));
 
 

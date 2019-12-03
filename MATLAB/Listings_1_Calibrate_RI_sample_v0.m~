@@ -7,16 +7,20 @@ close all
 is_dust_particle_remove = false; % do you want to remove dust particles in the ref. image?
 is_regularization = false; % eventually regularize the input image (blur it)
 is_raw = false; % is te file a RAW-dng? Experimental since each phone handles it a little different!
-is_onesided = true; % tis parameter is useful if there is a gradient in the images visible
-n_opdsteps = 25;
+is_onesided = 1; % 0=no, -1=upper side, 1=lower side; tis parameter is useful if there is a gradient in the images visible
+n_opdsteps = 100;
+opdfact = 2; % multiple of lambdas which is coverred by the fiber
+lambdaG = 562; % center wavelength
+opdmax= opdfact * lambdaG
+mygausskerneldim = 5;
 
 % add the library
 addpath('./src')
 
 % determine the path for the images
-imfolder = './data/EXP2/'
-f_ref_img = 'IMG_20191125_142817.jpg';
-f_sample_im = 'IMG_20191125_143408.jpg'; % PS stands for DNG-> JPG using Potosop RAW converter
+imfolder = './data/EXP4/DARK_BG/'
+f_ref_img = 'IMG_20191202_165839_PS3.jpg';
+f_sample_im = 'IMG_20191202_171601_PS3.jpg'; % PS stands for DNG-> JPG using Potosop RAW converter
 
 % load the imagefiles
 if(is_raw)
@@ -24,7 +28,8 @@ if(is_raw)
     I_ref_raw = extracBayerChannel(I_ref_raw);
     I_ref_raw = dip_image(I_ref_raw)/2^8;
 else
-    I_ref_raw = (dip_image(flip(imread([imfolder, f_ref_img])))/2^8);
+    I_ref_raw = dip_image(flip(imread([imfolder, f_ref_img])));
+    I_ref_raw = JLpreprocessimage(I_ref_raw,mygausskerneldim);
 end
 
 
@@ -53,29 +58,42 @@ end
 I_ref_masked = I_ref*mask;
 fake_fiber= fiber_shape*mask;
 
-cat(3, I_ref, fake_fiber)
+cat(3, I_ref, fake_fiber);
 
 %% visualize the sample to see if the OPD is roughly in the estimated range
-opdfact = 3.5;%linspace(2,4,20)
-lambdaG = 550;
-opdmax= opdfact * lambdaG
 obj=fake_fiber/max(fake_fiber);
-
-% visualize the fake fiber in RGB
-colMix = SimCol(obj);
-showCol(colMix)
 showCol(I_ref)
 
 
 %% create the LUT for RGB values and their corresponding OPD
-I_ref_masked_var = exp(I_ref_masked);
-if(0)
-    I_ref_masked_var(:,:,0) = I_ref_masked_var(:,:,0)^.5;
-I_ref_masked_var(:,:,1) = I_ref_masked_var(:,:,1)^1;
-I_ref_masked_var(:,:,2) = I_ref_masked_var(:,:,2)^2;
-end
-[OPDaxis,R,G,B]=JLgetCalibration(obj,(I_ref_masked_var),n_opdsteps,mybackgroundval);
-OPDMap = JLfindOPD((I_ref_masked_var),R,G,B,OPDaxis,0,1*[1 1 1])
+[OPDaxis,R,G,B]=JLgetCalibration(obj,I_ref_masked,n_opdsteps,mybackgroundval);
+
+R = R(0,i_zeroorder:i_firstorder);
+G = G(0,i_zeroorder:i_firstorder);
+B = B(0,i_zeroorder:i_firstorder);
+
+%%
+i_zeroorder = 1;
+i_firstorder = 21;
+% get values for 1st order of white
+R1 = R(0,i_zeroorder:i_firstorder);
+G1 = G(0,i_zeroorder:i_firstorder);
+B1 = B(0,i_zeroorder:i_firstorder);
+OPDaxis1 = OPDaxis(i_zeroorder:i_firstorder);
+showCol(repmat(cat(3,R2,G2,B2), [100 1 1]))
+
+% get values for 2nd order of white
+R2 = R(0,i_firstorder+1:end);
+G2 = G(0,i_firstorder+1:end);
+B2 = B(0,i_firstorder+1:end);
+OPDaxis2 = OPDaxis(i_firstorder+1:end);
+
+OPDMap1 = JLfindOPD((I_ref_masked),R1,G1,B1,OPDaxis1)
+OPDMap2 = JLfindOPD((I_ref_masked),R2,G2,B2,OPDaxis2)
+
+
+cat(3, OPDMap1, OPDMap2)
+
 
 % Save the RGB - OPD for Tensorflow
 matsavepath = strcat(imfolder,'JL_tensorflow.mat');
@@ -84,7 +102,7 @@ OPD_mat = double(OPDaxis); I_ref_mat = double(I_ref_masked);
 OPDMap_mat = double(OPDMap); mask_mat = double(mask);
 OPDBackgroundval_mat = double(mybackgroundval);
 save(matsavepath, 'R_mat', 'G_mat', 'B_mat', 'OPD_mat', 'I_ref_mat', 'OPDMap_mat', 'mask_mat', 'opdmax', 'OPDBackgroundval_mat', '-v7.3')
-
+%%
 figure()
 subplot(121)
 plot(OPD_mat,R_mat), hold on
@@ -96,17 +114,60 @@ plot3(R_mat, G_mat, B_mat)
 xlabel('R')
 ylabel('G')
 zlabel('B')
-adsf
+
+figure()
+plot(OPDaxis1,R1), hold on
+plot(OPDaxis1,G1), plot(OPDaxis1,B1)
+plot(OPDaxis2,R2), plot(OPDaxis2,G2), plot(OPDaxis2,B2)
+legend('r','g','b')
+hold off
+
 %% s-------------------------------------------------------------------------
 % REAL DATA Follows here!
 %--------------------------------------------------------------------------
 
+% try to apply colormap on specific file
+%f_sample_im = 'IMG_20191202_171935_PS2.jpg'
 
-%% try to apply colormap on specific file
-I_smpl = (dip_image(flip(imread([imfolder, f_sample_im])))/2^8);
+
+I_smpl = dip_image(flip(imread([imfolder, f_sample_im])));
+
 [I_smpl, ROISize, ROICentre] = JLextractROI(I_smpl);
 
-OPDMap_ob = JLfindOPD(I_smpl,R,G,B,OPDaxis,0,0*[1 1 1]);
+I_smpl = JLpreprocessimage(I_smpl,mygausskerneldim);
+
+
+if(0)
+%JLnormbackground(I_smpl,R,G,B,OPDaxis);
+
+fh=dipshow(showCol(I_smpl)); % find edges of CC signal
+diptruesize(fh, 200);
+fprintf('Thank you :-)')
+% select the Backgroundvalue 
+fprintf('Please select a sample-free background region (i.e. black/dark)')
+BackgroundPosition = dipgetcoords(fh,1);
+mybackgroundval = mean(extract(I_smpl, [20,20,3], BackgroundPosition),[],[1,2]);
+
+
+I_smpl(:,:,0) = I_smpl(:,:,0) - mybackgroundval(0) + R(0);
+I_smpl(:,:,1) = I_smpl(:,:,1) - mybackgroundval(1) + G(0);
+I_smpl(:,:,2) = I_smpl(:,:,2) - mybackgroundval(2) + B(0);
+end
+
+%%
+I_smpl = I_smpl_old;
+I_smpl(:,:,0) = I_smpl_old(:,:,0) + .0;
+I_smpl(:,:,1) = I_smpl_old(:,:,1) + .0;
+I_smpl(:,:,2) = I_smpl_old(:,:,2) + .0;
+
+OPDMap1 = JLfindOPD((I_smpl),R1,G1,B1,OPDaxis1);
+OPDMap2 = JLfindOPD((I_smpl),R2,G2,R2,OPDaxis2);
+cat(3,OPDMap1,OPDMap2)
+
+
+
+
+OPDMap_ob = JLfindOPD(I_smpl,R,G,B,OPDaxis);
 
 % display the result
 figure

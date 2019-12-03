@@ -37,14 +37,15 @@ BackgroundPosition = dipgetcoords(fh,1);
 
 
 mybackgroundval = mean(extract(input, [50,50,3], BackgroundPosition),[],[1,2]);
-[fiber_shape, fiber_shape_onesided, theta] = getFakeFiber(FiberPosition, mysize);
+[fiber_shape, fiber_shape_onesided, theta] = getFakeFiber(FiberPosition, mysize, is_onesided);
 
 %% select ROI
 mask = drawpolygon(newim(mysize),FiberPosition,1,'closed');
 mask = dip_image(mask,'bin');
 mask = ~bpropagation(mask&0,~mask,0,1,1);
 
-if is_onesided
+if abs(is_onesided)
+    
     mask = fiber_shape_onesided>0;
     fiber_shape = fiber_shape_onesided;
 end
