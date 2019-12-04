@@ -12,15 +12,15 @@ n_opdsteps = 100;
 opdfact = 2; % multiple of lambdas which is coverred by the fiber
 lambdaG = 562; % center wavelength
 opdmax= opdfact * lambdaG
-mygausskerneldim = 5;
+mygausskerneldim = 0;
 
 % add the library
 addpath('./src')
 
 % determine the path for the images
 imfolder = './data/EXP4/DARK_BG/'
-f_ref_img = 'IMG_20191202_165839_PS3.jpg';
-f_sample_im = 'IMG_20191202_171601_PS3.jpg'; % PS stands for DNG-> JPG using Potosop RAW converter
+f_ref_img = '2019-12-02 16.58.39-1.jpg';
+f_sample_im = '2019-12-02 17.15.55-1.jpg'; % PS stands for DNG-> JPG using Potosop RAW converter
 
 % load the imagefiles
 if(is_raw)
